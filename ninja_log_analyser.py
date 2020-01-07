@@ -6,10 +6,16 @@ Copyright (c) 2020 ginolatorilla
 import argparse
 import sys
 import os
+import re
+import logging
 
 
 def main():
     program_options = get_program_options()
+    header = program_options.input_file.readline()
+    if re.match(r'^#\s+ninja\s+log\s+v\d+$', header) is None:
+        logging.error('Not a valid .ninja_log (missing header)')
+        sys.exit(1)
     return 0
 
 
