@@ -52,8 +52,8 @@ def main():
     filtered = (i for i in m1 if 'object' in i)
     errors = (i['line'] for i in m2 if 'object' not in i)
 
-    sys.stderr.write('\n'.join('warning: cannot parse line #{}'.format(e)
-                               for e in errors) + '\n')
+    for e in errors:
+        sys.stderr.write('warning: cannot parse line #{}\n'.format(e))
     print('\n'.join(
         '{0[time]}{1} {0[object]}'.format(i, time_units)
         for i in sorted(filtered, key=lambda x: x['time'], reverse=True)))
