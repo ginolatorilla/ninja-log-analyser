@@ -8,6 +8,7 @@ import sys
 import os
 import re
 import logging
+import itertools
 
 
 def main():
@@ -20,16 +21,33 @@ def main():
     parser = re.compile(
         r'^(?P<start>\d+)\s+(?P<end>\d+)\s+\d+\s+(?P<object>.+)\s+[\da-f]+$')
 
+    def yield_parsed_line(parser, raw):
+        match = parser.match(raw)
+        if match is None:
+            return {}
+        else:
+            return match.groupdict()
+
     document = ({
         'line': n + 1,
-        **parser.match(l).groupdict()
+        **(yield_parsed_line(parser, l))
     } for n, l in enumerate(program_options.input_file.readlines()))
 
-    mapped = ({**i, 'time': int(i['end']) - int(i['start'])} for i in document)
+    def merge_computed_time(entry):
+        if 'start' in entry and 'end' in entry:
+            return {**entry, 'time': int(entry['end']) - int(entry['start'])}
+        else:
+            return entry
 
+    m1, m2 = itertools.tee(merge_computed_time(i) for i in document)
+    filtered = (i for i in m1 if 'object' in i)
+    errors = (i['line'] for i in m2 if 'object' not in i)
+
+    sys.stderr.write('\n'.join('warning: cannot parse line #{}'.format(e)
+                               for e in errors) + '\n')
     print('\n'.join(
         '{0[time]}ms {0[object]}'.format(i)
-        for i in sorted(mapped, key=lambda x: x['time'], reverse=True)))
+        for i in sorted(filtered, key=lambda x: x['time'], reverse=True)))
     return 0
 
 

@@ -40,6 +40,38 @@ def test_must_look_for_ninja_log_by_default_in_cwd(mocker, capfd):
     ])
 
 
+def test_must_ignore_junk_lines_and_emit_warnings(mocker, capfd):
+    mocker.patch(
+        'ninja_log_analyser.argparse.open',
+        mocker.mock_open(read_data=textwrap.dedent('''\
+                 # ninja log v5
+                 28339	37316	1568970682	a.o	21551924de56a0b0
+                 21092	28683	1568970674	b.o	e5c447592b0f338f
+                 !!! junk !!!
+                 10	1535	1568970647	libc.a	fec6486ac4c258a0
+                 !!! junk !!!
+                 ''')))
+
+    mocker.patch('ninja_log_analyser.sys.argv', ['__main__'])
+    assert 0 == ninja_log_analyser.main()
+    c_out, c_err = capfd.readouterr()
+    assert textwrap.dedent('''\
+        8977ms a.o
+        7591ms b.o
+        1525ms libc.a
+        ''') == c_out
+    assert textwrap.dedent('''\
+        warning: cannot parse line #3
+        warning: cannot parse line #5
+        ''') == c_err
+
+    ninja_log_analyser.argparse.open.assert_has_calls([
+        mocker.call(os.path.join(os.getcwd(), '.ninja_log'), 'r', mocker.ANY,
+                    mocker.ANY, mocker.ANY),
+        mocker.call().readline()
+    ])
+
+
 def test_accept_ninja_log_path_as_input(mocker):
     mocker.patch('ninja_log_analyser.argparse.open',
                  mocker.mock_open(read_data='# ninja log v5'))
