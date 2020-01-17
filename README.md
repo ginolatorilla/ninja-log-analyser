@@ -40,3 +40,11 @@ Output:
 7591ms b.o
 1525ms libc.a
 ```
+
+## Development
+
+You need to install [Pipenv](https://pipenv.readthedocs.io/en/latest/) first.
+
+Run `./bootstrap-dev` to install requirements
+
+Run `pipenv run pytest` to run all tests.
