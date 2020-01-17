@@ -17,7 +17,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pipenv
-        ./bootstrap-dev.py
+        ./bootstrap-dev
     - name: Lint with pycodestyle
       run: |
         pipenv run pycodestyle
