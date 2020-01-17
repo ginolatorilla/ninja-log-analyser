@@ -14,6 +14,12 @@ import itertools
 def main():
     program_options = get_program_options()
     header = program_options.input_file.readline()
+
+    time_units = 's' if program_options.human_readable else 'ms'
+
+    def time_transform(x):
+        return x / 1000 if program_options.human_readable else x
+
     if re.match(r'^#\s+ninja\s+log\s+v\d+$', header) is None:
         logging.error('Not a valid .ninja_log (missing header)')
         sys.exit(1)
@@ -35,7 +41,10 @@ def main():
 
     def merge_computed_time(entry):
         if 'start' in entry and 'end' in entry:
-            return {**entry, 'time': int(entry['end']) - int(entry['start'])}
+            return {
+                **entry, 'time':
+                time_transform(int(entry['end']) - int(entry['start']))
+            }
         else:
             return entry
 
@@ -46,7 +55,7 @@ def main():
     sys.stderr.write('\n'.join('warning: cannot parse line #{}'.format(e)
                                for e in errors) + '\n')
     print('\n'.join(
-        '{0[time]}ms {0[object]}'.format(i)
+        '{0[time]}{1} {0[object]}'.format(i, time_units)
         for i in sorted(filtered, key=lambda x: x['time'], reverse=True)))
     return 0
 
@@ -58,6 +67,10 @@ def get_program_options():
                         help='Path to a .ninja_log file.',
                         default=os.path.join(os.getcwd(), '.ninja_log'),
                         type=argparse.FileType('r'))
+    parser.add_argument('-H',
+                        '--human-readable',
+                        help='Show time units in seconds',
+                        action='store_true')
     return parser.parse_args()
 
 

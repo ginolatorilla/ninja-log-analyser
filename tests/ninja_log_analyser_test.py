@@ -40,6 +40,31 @@ def test_must_look_for_ninja_log_by_default_in_cwd(mocker, capfd):
     ])
 
 
+def test_show_human_readable_output(mocker, capfd):
+    mocker.patch(
+        'ninja_log_analyser.argparse.open',
+        mocker.mock_open(read_data=textwrap.dedent('''\
+                 # ninja log v5
+                 28339	37316	1568970682	a.o	21551924de56a0b0
+                 21092	28683	1568970674	b.o	e5c447592b0f338f
+                 10	1535	1568970647	libc.a	fec6486ac4c258a0
+                 ''')))
+
+    mocker.patch('ninja_log_analyser.sys.argv', ['__main__', '-H'])
+    assert 0 == ninja_log_analyser.main()
+    assert textwrap.dedent('''\
+        8.977s a.o
+        7.591s b.o
+        1.525s libc.a
+        ''') == capfd.readouterr().out
+
+    ninja_log_analyser.argparse.open.assert_has_calls([
+        mocker.call(os.path.join(os.getcwd(), '.ninja_log'), 'r', mocker.ANY,
+                    mocker.ANY, mocker.ANY),
+        mocker.call().readline()
+    ])
+
+
 def test_must_ignore_junk_lines_and_emit_warnings(mocker, capfd):
     mocker.patch(
         'ninja_log_analyser.argparse.open',
