@@ -1,5 +1,7 @@
 # Ninja Log Analyser
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/ginolatorilla/ninja-log-analyser/Python%20application/master?style=for-the-badge)
+
 Reads a `.ninja_log` and ranks build time of objects.
 
 `.ninja_log` is produced by the [Ninja build system](https://ninja-build.org/manual.html#ref_log).
