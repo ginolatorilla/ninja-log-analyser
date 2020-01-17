@@ -5,6 +5,7 @@ Copyright (c) 2020 Gino Latorilla.
 import pytest
 import subprocess
 import os
+import textwrap
 
 from .testables import ninja_log_analyser
 
@@ -14,12 +15,23 @@ def test_must_be_executable_with_builtin_help():
     assert result.returncode == 0
 
 
-def test_must_look_for_ninja_log_by_default_in_cwd(mocker):
-    mocker.patch('ninja_log_analyser.argparse.open',
-                 mocker.mock_open(read_data='# ninja log v5'))
+def test_must_look_for_ninja_log_by_default_in_cwd(mocker, capfd):
+    mocker.patch(
+        'ninja_log_analyser.argparse.open',
+        mocker.mock_open(read_data=textwrap.dedent('''\
+                 # ninja log v5
+                 28339	37316	1568970682	a.o	21551924de56a0b0
+                 21092	28683	1568970674	b.o	e5c447592b0f338f
+                 10	1535	1568970647	libc.a	fec6486ac4c258a0
+                 ''')))
 
     mocker.patch('ninja_log_analyser.sys.argv', ['__main__'])
-    ninja_log_analyser.main()
+    assert 0 == ninja_log_analyser.main()
+    assert textwrap.dedent('''\
+        8977ms a.o
+        7591ms b.o
+        1525ms libc.a
+        ''') == capfd.readouterr().out
 
     ninja_log_analyser.argparse.open.assert_has_calls([
         mocker.call(os.path.join(os.getcwd(), '.ninja_log'), 'r', mocker.ANY,

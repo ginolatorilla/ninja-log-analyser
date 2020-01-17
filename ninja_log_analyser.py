@@ -16,6 +16,20 @@ def main():
     if re.match(r'^#\s+ninja\s+log\s+v\d+$', header) is None:
         logging.error('Not a valid .ninja_log (missing header)')
         sys.exit(1)
+
+    parser = re.compile(
+        r'^(?P<start>\d+)\s+(?P<end>\d+)\s+\d+\s+(?P<object>.+)\s+[\da-f]+$')
+
+    document = ({
+        'line': n + 1,
+        **parser.match(l).groupdict()
+    } for n, l in enumerate(program_options.input_file.readlines()))
+
+    mapped = ({**i, 'time': int(i['end']) - int(i['start'])} for i in document)
+
+    print('\n'.join(
+        '{0[time]}ms {0[object]}'.format(i)
+        for i in sorted(mapped, key=lambda x: x['time'], reverse=True)))
     return 0
 
 
